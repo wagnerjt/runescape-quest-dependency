@@ -7,6 +7,8 @@ def match_quest(quest_id, matcher):
     return matcher.match('Quest', questId=quest_id).first()
 def match_skill(skill_name, matcher):
     return matcher.match('Skill', name=skill_name).first()
+def match_qp(matcher):
+    return matcher.match('QP').first()
 
 class DEPENDS_ON(Relationship): pass
 
@@ -19,6 +21,8 @@ with open(quest_path, 'r') as fp:
 # Configuring our graph
 graph = Graph(bolt=True, bolt_port=7687, user='neo4j', password='neo')
 graph_matcher = NodeMatcher(graph)
+
+QP = match_qp(graph_matcher)
 
 # Ensuring we have all quests added
 tx = graph.begin()
@@ -37,7 +41,7 @@ for row in raw_quest_json:
     if 'requirements' in row:
         quest = match_quest(row['id'], graph_matcher)
         if quest is None:
-            print('quest is none', requirement)
+            # print('quest is none', requirement)
             continue
         for requirement, value in row['requirements'].items():
             # Handle quest array
@@ -49,7 +53,9 @@ for row in raw_quest_json:
                         # print(q_depends_q)
                         tx.merge(q_depends_q)
             elif requirement == 'qp':
-                pass # Handle qp
+                # Handle qp
+                q_depends_qp = DEPENDS_ON(quest, QP) 
+                tx.merge(q_depends_qp)
             else:
                 skill = match_skill(requirement, graph_matcher) # Handle Skill
                 if skill is not None:
