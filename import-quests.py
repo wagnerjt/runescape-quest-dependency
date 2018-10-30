@@ -39,45 +39,22 @@ for row in raw_quest_json:
         if quest is None:
             print('quest is none', requirement)
             continue
-        for requirement in row['requirements']:
-
+        for requirement, value in row['requirements'].items():
             # Handle quest array
-            if requirement is 'quests':
-                pass
-            elif requirement is 'qp':
+            if requirement == 'quests':
+                for quest_id in value:
+                    quest_dependency = match_quest(quest_id, graph_matcher)
+                    if quest_dependency is not None:
+                        q_depends_q = DEPENDS_ON(quest, quest_dependency)
+                        # print(q_depends_q)
+                        tx.merge(q_depends_q)
+            elif requirement == 'qp':
                 pass # Handle qp
             else:
                 skill = match_skill(requirement, graph_matcher) # Handle Skill
                 if skill is not None:
                     # Create the required relationship between quest and skill
-                    q_depends_s = DEPENDS_ON(quest, skill, level=row['requirements'][requirement])
+                    q_depends_s = DEPENDS_ON(quest, skill, level=value)
                     tx.merge(q_depends_s)
-                    print(q_depends_s)
+                    # print(q_depends_s)
 tx.commit()
-
-
-# Setup connection
-
-# get transaction
-# tx = graph.begin()
-# print(graph)
-
-# # TODO: Create constraint.
-
-
-# # Create nodes
-# for index, row in df.iterrows():
-#     name = row['name']
-#     # if(row.isCombat):
-#     #     n = Node('Skill:Combat')
-#     # else:
-#     n = Node('Skill')
-
-#     # add name property
-#     n['name'] = name
-    
-
-#     # Save nodes with transaction
-#     tx.merge(n, primary_label='Skill', primary_key='name')
-# tx.commit()
-# print(tx.finished())
